@@ -16,20 +16,17 @@ class Author
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
-    private ?string $firstName = null;
+    private ?string $lastname = null;
 
-    #[ORM\Column(length: 255)]
-    private ?string $lastName = null;
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $firstname = null;
 
-    #[ORM\ManyToOne(targetEntity: self::class, inversedBy: 'Book')]
-    private ?self $author = null;
-
-    #[ORM\OneToMany(mappedBy: 'author', targetEntity: self::class)]
-    private Collection $Book;
+    #[ORM\OneToMany(mappedBy: 'author', targetEntity: Book::class)]
+    private Collection $books;
 
     public function __construct()
     {
-        $this->Book = new ArrayCollection();
+        $this->books = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -37,63 +34,51 @@ class Author
         return $this->id;
     }
 
-    public function getFirstName(): ?string
+    public function getLastname(): ?string
     {
-        return $this->firstName;
+        return $this->lastname;
     }
 
-    public function setFirstName(string $firstName): self
+    public function setLastname(string $lastname): self
     {
-        $this->firstName = $firstName;
+        $this->lastname = $lastname;
 
         return $this;
     }
 
-    public function getLastName(): ?string
+    public function getFirstname(): ?string
     {
-        return $this->lastName;
+        return $this->firstname;
     }
 
-    public function setLastName(string $lastName): self
+    public function setFirstname(?string $firstname): self
     {
-        $this->lastName = $lastName;
-
-        return $this;
-    }
-
-    public function getAuthor(): ?self
-    {
-        return $this->author;
-    }
-
-    public function setAuthor(?self $author): self
-    {
-        $this->author = $author;
+        $this->firstname = $firstname;
 
         return $this;
     }
 
     /**
-     * @return Collection<int, self>
+     * @return Collection<int, Book>
      */
-    public function getBook(): Collection
+    public function getBooks(): Collection
     {
-        return $this->Book;
+        return $this->books;
     }
 
-    public function addBook(self $book): self
+    public function addBook(Book $book): self
     {
-        if (!$this->Book->contains($book)) {
-            $this->Book->add($book);
+        if (!$this->books->contains($book)) {
+            $this->books->add($book);
             $book->setAuthor($this);
         }
 
         return $this;
     }
 
-    public function removeBook(self $book): self
+    public function removeBook(Book $book): self
     {
-        if ($this->Book->removeElement($book)) {
+        if ($this->books->removeElement($book)) {
             // set the owning side to null (unless already changed)
             if ($book->getAuthor() === $this) {
                 $book->setAuthor(null);
