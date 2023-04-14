@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\Book;
 use App\Repository\BookRepository;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -27,5 +28,14 @@ class BookController extends AbstractController
     {
         $jsonBook = $serializer->serialize($book, 'json', ['groups' => 'getBooks']);
         return new JsonResponse($jsonBook, Response::HTTP_OK, [], true);
+    }
+
+    #[Route('/api/books/{id}', name: 'deleteBook', methods: ['DELETE'])]
+    public function deleteBook(Book $book, EntityManagerInterface $em): JsonResponse
+    {
+        $em->remove($book);
+        $em->flush();
+
+        return new JsonResponse(null, Response::HTTP_NO_CONTENT);
     }
 }
