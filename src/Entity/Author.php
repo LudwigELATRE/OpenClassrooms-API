@@ -14,15 +14,15 @@ class Author
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(["getBooks"])]
+    #[Groups(["getBooks", "getAuthors"])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(["getBooks"])]
+    #[Groups(["getBooks", "getAuthors"])]
     private ?string $lastname = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(["getBooks"])]
+    #[Groups(["getBooks", "getAuthors"])]
     private ?string $firstname = null;
 
     #[ORM\OneToMany(mappedBy: 'author', targetEntity: Book::class)]
