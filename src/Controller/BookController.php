@@ -14,6 +14,7 @@ use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 class BookController extends AbstractController
 {
@@ -44,22 +45,24 @@ class BookController extends AbstractController
     }
 
     #[Route('/api/books', name: "createBook", methods: ['POST'])]
-    public function createBook(Request $request, SerializerInterface $serializer, EntityManagerInterface $em, UrlGeneratorInterface $urlGenerator, AuthorRepository $authorRepository): JsonResponse
+    public function createBook(Request $request, SerializerInterface $serializer, EntityManagerInterface $em, UrlGeneratorInterface $urlGenerator, AuthorRepository $authorRepository, ValidatorInterface $validator): JsonResponse
     {
         $book = $serializer->deserialize($request->getContent(), Book::class, 'json');
 
-        // Récupération de l'ensemble des données envoyées sous forme de tableau
-        $content = $request->toArray();
+        //on verifie les erreurs
+        $errors = $validator->validate($book);
 
-        // Récupération de l'idAuthor. S'il n'est pas défini, alors on met -1 par défaut.
-        $idAuthor = $content['idAuthor'] ?? -1;
-
-        // On cherche l'auteur qui correspond et on l'assigne au livre.
-        // Si "find" ne trouve pas l'auteur, alors null sera retourné.
-        $book->setAuthor($authorRepository->find($idAuthor));
+        if ($errors->count() > 0) {
+            return new JsonResponse($serializer->serialize($errors, 'json'), JsonResponse::HTTP_BAD_REQUEST, [], true);
+        }
 
         $em->persist($book);
         $em->flush();
+
+
+        $content = $request->toArray();
+        $idAuthor = $content['idAuthor'] ?? -1;
+        $book->setAuthor($authorRepository->find($idAuthor));
 
         $jsonBook = $serializer->serialize($book, 'json', ['groups' => 'getBooks']);
 

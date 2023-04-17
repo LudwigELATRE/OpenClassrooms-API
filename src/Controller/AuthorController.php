@@ -56,7 +56,7 @@ class AuthorController extends AbstractController
         return new JsonResponse($jsonBook, Response::HTTP_CREATED, ["Location" => $location], true);
     }
 
-    #[Route('/api/books/{id}', name: "updateBook", methods: ['PUT'])]
+    #[Route('/api/authors/{id}', name: "updateAuthor", methods: ['PUT'])]
     public function updateBook(Request $request, SerializerInterface $serializer, Author $currentAuthor, EntityManagerInterface $em, AuthorRepository $authorRepository): JsonResponse
     {
         $updateAuthor = $serializer->deserialize(
