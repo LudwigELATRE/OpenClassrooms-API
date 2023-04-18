@@ -4,18 +4,20 @@ namespace App\Controller;
 
 use App\Entity\Author;
 use App\Repository\AuthorRepository;
+use JMS\Serializer\SerializerInterface;
 use Doctrine\ORM\EntityManagerInterface;
+use JMS\Serializer\SerializationContext;
 use Symfony\Contracts\Cache\ItemInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Contracts\Cache\TagAwareCacheInterface;
-use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 class AuthorController extends AbstractController
 {
@@ -34,7 +36,8 @@ class AuthorController extends AbstractController
             return $authorRepository->findAllWithPagination($page, $limit);
         });
 
-        $jsonBookList = $serializer->serialize($authorList, 'json', ['groups' => 'getAuthors']);
+        $content = SerializationContext::create()->setGroups(["getBooks"]);
+        $jsonBookList = $serializer->serialize($authorList, 'json', $content);
 
         return new JsonResponse($jsonBookList, Response::HTTP_OK, [], true);
     }
@@ -42,7 +45,8 @@ class AuthorController extends AbstractController
     #[Route('/api/authors/{id}', name: 'detailAuthor', methods: ['GET'])]
     public function getDetailBook(Author $author, SerializerInterface $serializer): JsonResponse
     {
-        $jsonAuthor = $serializer->serialize($author, 'json', ['groups' => 'getAuthors']);
+        $content = SerializationContext::create()->setGroups(["getBooks"]);
+        $jsonAuthor = $serializer->serialize($author, 'json', $content);
         return new JsonResponse($jsonAuthor, Response::HTTP_OK, [], true);
     }
 
@@ -63,7 +67,8 @@ class AuthorController extends AbstractController
         $em->persist($author);
         $em->flush();
 
-        $jsonBook = $serializer->serialize($author, 'json', ['groups' => 'getAuthors']);
+        $content = SerializationContext::create()->setGroups(["getBooks"]);
+        $jsonBook = $serializer->serialize($author, 'json', $content);
 
         $location = $urlGenerator->generate('detailAuthor', ['id' => $author->getId()], UrlGeneratorInterface::ABSOLUTE_URL);
 
@@ -71,16 +76,21 @@ class AuthorController extends AbstractController
     }
 
     #[Route('/api/authors/{id}', name: "updateAuthor", methods: ['PUT'])]
-    public function updateBook(Request $request, SerializerInterface $serializer, Author $currentAuthor, EntityManagerInterface $em, AuthorRepository $authorRepository): JsonResponse
+    public function updateBook(Request $request, SerializerInterface $serializer, Author $currentAuthor, EntityManagerInterface $em, AuthorRepository $authorRepository, ValidatorInterface $validator): JsonResponse
     {
-        $updateAuthor = $serializer->deserialize(
-            $request->getContent(),
-            Author::class,
-            'json',
-            [AbstractNormalizer::OBJECT_TO_POPULATE => $currentAuthor]
-        );
+        $newAuthor = $serializer->deserialize($request->getContent(), Book::class, 'json');
 
-        $em->persist($updateAuthor);
+        $currentAuthor->setLastname($newAuthor->getTitle());
+        $currentAuthor->setFirstname($newAuthor->getCoverText());
+
+        //On verifie les erreurs
+        $errors = $validator->validate($currentAuthor);
+
+        if ($errors->count() > 0) {
+            return new JsonResponse($serializer->serialize($errors, 'json'), JsonResponse::HTTP_BAD_REQUEST, [], true);
+        }
+
+        $em->persist($currentAuthor);
         $em->flush();
 
         return new JsonResponse(null, JsonResponse::HTTP_NO_CONTENT);
