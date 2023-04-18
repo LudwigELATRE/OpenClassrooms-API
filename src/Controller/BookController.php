@@ -6,6 +6,7 @@ use App\Entity\Book;
 use App\Repository\BookRepository;
 use App\Repository\AuthorRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
@@ -45,6 +46,7 @@ class BookController extends AbstractController
     }
 
     #[Route('/api/books', name: "createBook", methods: ['POST'])]
+    #[IsGranted('ROLE_ADMIN', message: "Vous n'avez pas les droits suffisant pour crée un livre.")]
     public function createBook(Request $request, SerializerInterface $serializer, EntityManagerInterface $em, UrlGeneratorInterface $urlGenerator, AuthorRepository $authorRepository, ValidatorInterface $validator): JsonResponse
     {
         $book = $serializer->deserialize($request->getContent(), Book::class, 'json');
