@@ -44,6 +44,15 @@ class BookRepository extends ServiceEntityRepository
         return $this->findOneBy(['id' => $id]);
     }
 
+    public function findAllWithPagination($page, $limit)
+    {
+        $qb = $this->createQueryBuilder('b');
+        $qb->setFirstResult(($page - 1) * $limit);
+        $qb->setMaxResults($limit);
+
+        return $qb->getQuery()->getResult();
+    }
+
     //    /**
     //     * @return Book[] Returns an array of Book objects
     //     */
