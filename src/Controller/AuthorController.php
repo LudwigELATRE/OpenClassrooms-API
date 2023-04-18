@@ -20,14 +20,18 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 class AuthorController extends AbstractController
 {
     #[Route('/api/authors', name: 'author', methods: ['GET'])]
-    public function getAllAuthor(AuthorRepository $authorRepository, SerializerInterface $serializer, TagAwareCacheInterface $cache): JsonResponse
+    public function getAllAuthor(AuthorRepository $authorRepository, SerializerInterface $serializer, Request $request, TagAwareCacheInterface $cache): JsonResponse
     {
-        $idCache = "getAllAuthor";
+        $page = $request->get('page', 1);
+        $limit = $request->get('limit', 3);
 
-        $authorList = $cache->get($idCache, function (ItemInterface $item) use ($authorRepository) {
+        $idCache = "getAllAuthor-" . $page . "-" . $limit;
+
+        $authorList = $cache->get($idCache, function (ItemInterface $item) use ($authorRepository, $page, $limit) {
             echo ("L'element n'est pas encore en cache !\n");
             $item->tag("auhtorsCache");
-            return $authorRepository->findAll();
+            $item->expiresAfter(60);
+            return $authorRepository->findAllWithPagination($page, $limit);
         });
 
         $jsonBookList = $serializer->serialize($authorList, 'json', ['groups' => 'getAuthors']);

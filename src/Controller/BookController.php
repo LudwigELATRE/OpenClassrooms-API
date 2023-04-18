@@ -6,18 +6,18 @@ use App\Entity\Book;
 use App\Repository\BookRepository;
 use App\Repository\AuthorRepository;
 use Doctrine\ORM\EntityManagerInterface;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
+use Symfony\Contracts\Cache\ItemInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Contracts\Cache\TagAwareCacheInterface;
 use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\Validator\Validator\ValidatorInterface;
-use Symfony\Contracts\Cache\ItemInterface;
-use Symfony\Contracts\Cache\TagAwareCacheInterface;
 
 class BookController extends AbstractController
 {
@@ -29,13 +29,13 @@ class BookController extends AbstractController
 
         $idCache = "getAllBooks-" . $page . "-" . $limit;
 
-        $bookList = $cache->get($idCache, function (ItemInterface $item) use ($bookRepository, $page, $limit) {
+        $jsonBookList = $cache->get($idCache, function (ItemInterface $item) use ($bookRepository, $page, $limit, $serializer) {
             echo ("L'element n'est pas encore en cache !\n");
             $item->tag("booksCache");
-            return $bookRepository->findAllWithPagination($page, $limit);
+            $bookList = $bookRepository->findAllWithPagination($page, $limit);
+            return $serializer->serialize($bookList, 'json', ['groups' => 'getBooks']);
         });
 
-        $jsonBookList = $serializer->serialize($bookList, 'json', ['groups' => 'getBooks']);
         return new JsonResponse($jsonBookList, Response::HTTP_OK, [], true);
     }
 
@@ -48,8 +48,9 @@ class BookController extends AbstractController
     }
 
     #[Route('/api/books/{id}', name: 'deleteBook', methods: ['DELETE'])]
-    public function deleteBook(Book $book, EntityManagerInterface $em): JsonResponse
+    public function deleteBook(Book $book, EntityManagerInterface $em, TagAwareCacheInterface $cache): JsonResponse
     {
+        $cache->invalidateTags(["booksCache"]);
         $em->remove($book);
         $em->flush();
 
