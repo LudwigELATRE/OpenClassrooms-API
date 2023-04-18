@@ -5,21 +5,30 @@ namespace App\Controller;
 use App\Entity\Author;
 use App\Repository\AuthorRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Contracts\Cache\ItemInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Contracts\Cache\TagAwareCacheInterface;
 use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
 class AuthorController extends AbstractController
 {
     #[Route('/api/authors', name: 'author', methods: ['GET'])]
-    public function getAllAuthor(AuthorRepository $authorRepository, SerializerInterface $serializer): JsonResponse
+    public function getAllAuthor(AuthorRepository $authorRepository, SerializerInterface $serializer, TagAwareCacheInterface $cache): JsonResponse
     {
-        $authorList = $authorRepository->findAll();
+        $idCache = "getAllAuthor";
+
+        $authorList = $cache->get($idCache, function (ItemInterface $item) use ($authorRepository) {
+            echo ("L'element n'est pas encore en cache !\n");
+            $item->tag("auhtorsCache");
+            return $authorRepository->findAll();
+        });
 
         $jsonBookList = $serializer->serialize($authorList, 'json', ['groups' => 'getAuthors']);
 
@@ -42,6 +51,7 @@ class AuthorController extends AbstractController
     }
 
     #[Route('/api/authors', name: "createAuthor", methods: ['POST'])]
+    #[IsGranted('ROLE_ADMIN', message: "Vous n'avez pas les droits suffisant pour crée un livre.")]
     public function createBook(Request $request, SerializerInterface $serializer, EntityManagerInterface $em, UrlGeneratorInterface $urlGenerator): JsonResponse
     {
         $author = $serializer->deserialize($request->getContent(), Book::class, 'json');
