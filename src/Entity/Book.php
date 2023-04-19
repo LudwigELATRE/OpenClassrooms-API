@@ -8,6 +8,7 @@ use App\Repository\BookRepository;
 use JMS\Serializer\Annotation\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 use Hateoas\Configuration\Annotation as Hateoas;
+use JMS\Serializer\Annotation\Since;
 
 /**
  * @Hateoas\Relation(
@@ -68,6 +69,7 @@ class Book
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     #[Groups(["getBooks"])]
+    #[Since("2.0")]
     private ?string $comment = null;
 
     public function getId(): ?int
