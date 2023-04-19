@@ -51,7 +51,7 @@ class AuthorController extends AbstractController
     }
 
     #[Route('/api/authors/{id}', name: 'detailAuthor', methods: ['DELETE'])]
-    public function deleteUser(Author $author, EntityManagerInterface $em): JsonResponse
+    public function deleteAuthor(Author $author, EntityManagerInterface $em): JsonResponse
     {
         $em->remove($author);
         $em->flush();

@@ -23,7 +23,7 @@ use Hateoas\Configuration\Annotation as Hateoas;
  *  * @Hateoas\Relation(
  *      "delete",
  *      href = @Hateoas\Route(
- *          "detailBook",
+ *          "deleteBook",
  *          parameters = { "id" = "expr(object.getId())" }
  *      ),
  *      exclusion = @Hateoas\Exclusion(groups="getBooks", excludeIf = "expr(not is_granted('ROLE_ADMIN'))"),
@@ -34,7 +34,7 @@ use Hateoas\Configuration\Annotation as Hateoas;
  *  * @Hateoas\Relation(
  *      "update",
  *      href = @Hateoas\Route(
- *          "detailBook",
+ *          "updateBook",
  *          parameters = { "id" = "expr(object.getId())" }
  *      ),
  *      exclusion = @Hateoas\Exclusion(groups="getBooks", excludeIf = "expr(not is_granted('ROLE_ADMIN'))"),
@@ -62,8 +62,13 @@ class Book
     private ?string $coverText = null;
 
     #[ORM\ManyToOne(inversedBy: 'books')]
+    #[ORM\JoinColumn(onDelete: "CASCADE")]
     #[Groups(["getBooks"])]
     private ?Author $author = null;
+
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[Groups(["getBooks"])]
+    private ?string $comment = null;
 
     public function getId(): ?int
     {
@@ -102,6 +107,18 @@ class Book
     public function setAuthor(?Author $author): self
     {
         $this->author = $author;
+
+        return $this;
+    }
+
+    public function getComment(): ?string
+    {
+        return $this->comment;
+    }
+
+    public function setComment(?string $comment): self
+    {
+        $this->comment = $comment;
 
         return $this;
     }

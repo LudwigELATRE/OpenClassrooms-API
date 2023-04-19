@@ -50,6 +50,7 @@ class AppFixtures extends Fixture
             $book = new Book();
             $book->setTitle("Titre " . $i);
             $book->setCoverText("Quatrieme de couverture : " . $i);
+            $book->setComment("Commentaire de bibliothécaire : " . $i);
             // On lie le livre à un auteur pris au hasard dans le tableau des auteurs.
             $book->setAuthor($listAuthor[array_rand($listAuthor)]);
             $manager->persist($book);
